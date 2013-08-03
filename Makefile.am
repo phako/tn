@@ -21,7 +21,7 @@ AM_CFLAGS = \
 			$(CAIRO_CFLAGS) \
 			$(NULL)
 
-src_tn_LDFLAGS = \
+src_tn_LDADD = \
 				 $(FFMPEG_LIBS) \
 				 -ljpeg \
 				 $(CAIRO_LIBS) \

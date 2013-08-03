@@ -13,7 +13,7 @@ AC_SUBST(LDFLAGS)
 
 PKG_CHECK_MODULES(CAIRO, [cairo],
                   AC_DEFINE(HAVE_CAIRO, 1, [Define if cairo is available]))
-PKG_CHECK_MODULES(FFMPEG, [libavformat libavcodec libswscale])
+PKG_CHECK_MODULES(FFMPEG, [libavformat libavcodec libswscale libavutil])
 AVFORMAT_DIR=$(pkg-config --variable=includedir libavformat)
 AC_CHECK_FILE([${AVFORMAT_DIR}/avformat.h],,
               AC_CHECK_FILE([${AVFORMAT_DIR}/libavformat/avformat.h],

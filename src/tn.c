@@ -80,8 +80,6 @@ enum ImageFormat image_format = IMAGE_FORMAT_PPM;
 uint8_t num_pics = 32;
 uint32_t offset = 0;
 
-#define VERSION "0.01"
-
 int main(int argc, char *argv[]) {
     int             i;
     int opt;
