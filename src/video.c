@@ -21,17 +21,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <libavcodec/avcodec.h>
+
 #include "util.h"
 #include "video.h"
 
 static int
 find_video_stream(AVFormatContext* ctx)
 {
-    int i;
+    uint16_t i;
 
     for (i = 0; i < ctx->nb_streams; ++i)
     {
-        if (ctx->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO)
+        if (ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
         {
             return i;
         }
@@ -62,7 +64,7 @@ create_codec(AVCodecContext* ctx)
     codec = avcodec_find_decoder(ctx->codec_id);
     if (codec)
     {
-        if (avcodec_open(ctx, codec) >= 0)
+        if (avcodec_open2(ctx, codec, NULL) >= 0)
         {
             return codec;
         }
@@ -83,9 +85,9 @@ video_file_open(const char* filename)
     if (video_file)
     {
         memset(video_file, 0, sizeof(struct VideoFile));
-        if (av_open_input_file(&(video_file->format_ctx), filename, NULL, 0, NULL) == 0)
+        if (avformat_open_input(&(video_file->format_ctx), filename, NULL, NULL) == 0)
         {
-            if (av_find_stream_info(video_file->format_ctx) >= 0)
+            if (avformat_find_stream_info(video_file->format_ctx, NULL) >= 0)
             {   
                 int idx;
                 /* find video stream */
@@ -183,7 +185,7 @@ video_file_close(struct VideoFile* video_file)
 
     if (video_file->format_ctx)
     {
-        av_close_input_file(video_file->format_ctx);
+        avformat_close_input(&(video_file->format_ctx));
     }
 
     free(video_file);
@@ -203,18 +205,18 @@ video_file_decode_frame(struct VideoFile* video_file)
     {
         if (packet.stream_index == video_file->video_stream_idx)
         {
-            avcodec_decode_video(
+            avcodec_decode_video2(
                     video_file->codec_ctx, 
                     video_file->frame,
                     &frame_finished,
-                    packet.data, packet.size);
+                    &packet);
             if (frame_finished)
             {
                 video_file->pts = packet.dts;
                 /* create rgb frame */
                 sws_scale(
                         video_file->scale_ctx,
-                        video_file->frame->data, 
+                        (const uint8_t * const*) video_file->frame->data,
                         video_file->frame->linesize, 0,
                         video_file->height, 
                         video_file->frame_rgb->data, 
@@ -272,17 +274,17 @@ video_file_seek_frame(struct VideoFile* video_file, uint64_t frame, int slow_see
                 frame,
                 AVSEEK_FLAG_BACKWARD);
     }
-    video_file->codec_ctx->hurry_up = 1;
+    video_file->codec_ctx->skip_frame = AVDISCARD_NONREF;
     do
     {
         video_file_decode_frame(video_file);
         if (video_file->pts >= frame - 1)
         {
-            printf("PTS: %lli, frame: %lli\n", video_file->pts, frame);
+            printf("PTS: %"PRId64", frame: %"PRIu64"\n", video_file->pts, frame);
             break;
         }
     } while (1);
-    video_file->codec_ctx->hurry_up = 0;
+    video_file->codec_ctx->skip_frame = AVDISCARD_NONE;
 
     return 0;
 }

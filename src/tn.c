@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
     step = video_file->video_stream->duration / num_pics;
 
     /* Dump information about file onto standard error */
-    dump_format(video_file->format_ctx, 0, argv[optind], 0);
+    av_dump_format(video_file->format_ctx, 0, argv[optind], 0);
 
     for (i = 0; i < num_pics; ++i)
     {
